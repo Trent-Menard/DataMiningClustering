@@ -75,18 +75,25 @@ def k_means_cluster(pandas_df, k, q, max_iterations):
     else:
         print(f"K-means reached max iteration count ({max_iterations}). Stopping w/ current vals.")
 
-    # Tmp
-    one = features[clusters == 0]
-    two = features[clusters == 1]
-    three = features[clusters == 2]
     return clusters, centroids
+
+def print_cluster_info(clusters, centroids, feature_names):
+    print("\nCluster Centroids:")
+    for i, centroid in enumerate(centroids):
+        print(f"Cluster {i + 1}:", end=" ")
+        for j, feature in enumerate(feature_names):
+            print(f"{feature}={centroid[j]:.4f}", end="  ")
+        print()
+
+    print("\nCluster Distribution:")
+    unique, counts = np.unique(clusters, return_counts=True)
+    for i, count in zip(unique, counts):
+        print(f"Cluster {i + 1}: {count} points ({count / len(clusters) * 100:.1f}%)")
 
 data = read_file("Longotor1delta.xls")
 normalized_data = z_score_norm(data)
 # q is Minkowski distance: 1 = Manhattan, 2 = Euclidean
 clusters, centroids = k_means_cluster(normalized_data, k=3, q=1, max_iterations=100)
 
-print("Clusters and first 10 centroids:")
-for i in range(len(clusters)):
-    print(f"Cluster: {i + 1}")
-    print(f"Centroids: {centroids[:11]}")
+feature_names = ['sch9/wt', 'ras2/wt', 'tor1/wt']
+print_cluster_info(clusters, centroids, feature_names)
