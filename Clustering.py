@@ -40,7 +40,7 @@ def k_means_cluster(pandas_df, k, q, max_iterations):
 
     # 1. Partition into K subsets
     np.random.seed(42)
-    # Randomly split data into K initial centroids
+    # Randomly select K initial centroids
     random_indices = np.random.choice(num_features, k, replace=False)
     centroids = features[random_indices]
 
@@ -77,17 +77,14 @@ def k_means_cluster(pandas_df, k, q, max_iterations):
 
     return clusters, centroids
 
-
 def initialize_membership(n_clusters, n_samples):
     U = np.random.dirichlet(np.ones(n_clusters), size=n_samples).T
     return U
-
 
 def calculate_cluster_centers(U, X, m):
     num = np.dot(U ** m, X)
     den = np.sum(U ** m, axis=1, keepdims=True)
     return num / den
-
 
 def update_membership(X, centers, m):
     n_clusters = centers.shape[0]
@@ -102,7 +99,6 @@ def update_membership(X, centers, m):
             )
             U_new[i, j] = 1 / denom
     return U_new
-
 
 def fuzzy_c_means(X, n_clusters=3, m=2.0, max_iter=100, error=1e-5):
     X = np.array(X)
@@ -120,7 +116,6 @@ def fuzzy_c_means(X, n_clusters=3, m=2.0, max_iter=100, error=1e-5):
     labels = np.argmax(U, axis=0)
     return centers, U, labels
 
-
 def print_cluster_info(clusters, centroids, feature_names):
     print("\nCluster Centroids:")
     for i, centroid in enumerate(centroids):
@@ -136,14 +131,18 @@ def print_cluster_info(clusters, centroids, feature_names):
 
 data = read_file("Longotor1delta.xls")
 normalized_data = z_score_norm(data)
+
+# K-Means Clustering
 # q is Minkowski distance: 1 = Manhattan, 2 = Euclidean
+print("Running K-Means Clustering")
 clusters, centroids = k_means_cluster(normalized_data, k=3, q=1, max_iterations=100)
-#Fuzzy
-centers, U, labels = fuzzy_c_means(normalized_data[['sch9/wt', 'ras2/wt', 'tor1/wt']].values, n_clusters=3)
-#print(centers, U, labels)
 feature_names = ['sch9/wt', 'ras2/wt', 'tor1/wt']
 print_cluster_info(clusters, centroids, feature_names)
-print("Fuzzy")
-labels = np.argmax(U, axis=0)
-print_cluster_info(labels, centers, feature_names)
+print()
 
+# Fuzzy-Means Clustering
+print("Running Fuzzy-Means Clustering")
+centers, U, labels = fuzzy_c_means(normalized_data[feature_names].values, n_clusters=3)
+#print(centers, U, labels)
+labels = np.argmax(U, axis=0)
+print_cluster_info(labels, centers, feature_names) # TODO: Replace w/ new implementation
