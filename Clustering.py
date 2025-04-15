@@ -77,6 +77,50 @@ def k_means_cluster(pandas_df, k, q, max_iterations):
 
     return clusters, centroids
 
+
+def initialize_membership(n_clusters, n_samples):
+    U = np.random.dirichlet(np.ones(n_clusters), size=n_samples).T
+    return U
+
+
+def calculate_cluster_centers(U, X, m):
+    num = np.dot(U ** m, X)
+    den = np.sum(U ** m, axis=1, keepdims=True)
+    return num / den
+
+
+def update_membership(X, centers, m):
+    n_clusters = centers.shape[0]
+    n_samples = X.shape[0]
+    U_new = np.zeros((n_clusters, n_samples))
+
+    for i in range(n_clusters):
+        for j in range(n_samples):
+            denom = sum(
+                (np.linalg.norm(X[j] - centers[i]) / np.linalg.norm(X[j] - centers[k])) ** (2 / (m - 1))
+                for k in range(n_clusters)
+            )
+            U_new[i, j] = 1 / denom
+    return U_new
+
+
+def fuzzy_c_means(X, n_clusters=3, m=2.0, max_iter=100, error=1e-5):
+    X = np.array(X)
+    n_samples = X.shape[0]
+    U = initialize_membership(n_clusters, n_samples)
+
+    for iteration in range(max_iter):
+        centers = calculate_cluster_centers(U, X, m)
+        U_new = update_membership(X, centers, m)
+
+        if np.linalg.norm(U_new - U) < error:
+            break
+        U = U_new
+
+    labels = np.argmax(U, axis=0)
+    return centers, U, labels
+
+
 def print_cluster_info(clusters, centroids, feature_names):
     print("\nCluster Centroids:")
     for i, centroid in enumerate(centroids):
@@ -94,6 +138,12 @@ data = read_file("Longotor1delta.xls")
 normalized_data = z_score_norm(data)
 # q is Minkowski distance: 1 = Manhattan, 2 = Euclidean
 clusters, centroids = k_means_cluster(normalized_data, k=3, q=1, max_iterations=100)
-
+#Fuzzy
+centers, U, labels = fuzzy_c_means(normalized_data[['sch9/wt', 'ras2/wt', 'tor1/wt']].values, n_clusters=3)
+#print(centers, U, labels)
 feature_names = ['sch9/wt', 'ras2/wt', 'tor1/wt']
 print_cluster_info(clusters, centroids, feature_names)
+print("Fuzzy")
+labels = np.argmax(U, axis=0)
+print_cluster_info(labels, centers, feature_names)
+
