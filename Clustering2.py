@@ -76,6 +76,58 @@ def k_means_cluster(pandas_df, k, q, max_iterations):
 
     return clusters, centroids
 
+#Randomly initialize centroids and the membership of the data points
+def initialize_membership(n_clusters, n_samples):
+    U = np.random.dirichlet(np.ones(n_clusters), size=n_samples).T
+    return U
+
+
+def calculate_cluster_centers(U, X, m):
+    #Weighted data
+    num = np.dot(U ** m, X)
+    #weight of each cluster
+    den = np.sum(U ** m, axis=1, keepdims=True)
+    #Centroid
+    return num / den
+
+#Updates membership of data based on distance to the clusters
+def update_membership(X, centers, m):
+    n_clusters = centers.shape[0]
+    n_samples = X.shape[0]
+    U_new = np.zeros((n_clusters, n_samples))
+
+    #Goes through each cluster and each data point
+    for i in range(n_clusters):
+        for j in range(n_samples):
+            denom = sum(
+                #calculates distance
+                (np.linalg.norm(X[j] - centers[i]) / np.linalg.norm(X[j] - centers[k])) ** (2 / (m - 1))
+                for k in range(n_clusters)
+            )
+            U_new[i, j] = 1 / denom
+    return U_new
+
+#Actual Fuzzy algorithm
+def fuzzy_c_means(X, n_clusters=3, m=2.0, max_iter=100, error=1e-5):
+    #takes in data and initializes the centroids and membership of the data points
+    X = np.array(X)
+    n_samples = X.shape[0]
+    U = initialize_membership(n_clusters, n_samples)
+
+    #calculate centroids and calculate membership
+    for iteration in range(max_iter):
+        centers = calculate_cluster_centers(U, X, m)
+        U_new = update_membership(X, centers, m)
+
+        #Determines if convergence is reached
+        if np.linalg.norm(U_new - U) < error:
+            break
+        U = U_new
+
+    #fuzzy membership matrix
+    labels = np.argmax(U, axis=0)
+    return centers, U, labels
+
 def print_cluster_info(clusters, centroids, feature_names):
     print("\nCluster Centroids:")
     for i, centroid in enumerate(centroids):
