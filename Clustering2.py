@@ -108,7 +108,7 @@ def update_membership(X, centers, m):
     return U_new
 
 #Actual Fuzzy algorithm
-def fuzzy_c_means(X, n_clusters=3, m=2.0, max_iter=100, error=1e-5):
+def fuzzy_c_means(X, n_clusters, m=2.0, max_iter=100, error=1e-5):
     #takes in data and initializes the centroids and membership of the data points
     X = np.array(X)
     n_samples = X.shape[0]
@@ -214,4 +214,22 @@ for k in range(3, 11, 2):
     feature_names = ['sch9/wt', 'ras2/wt', 'tor1/wt']
     classes = ["Cluster 1", "Cluster 2", "Cluster 3"]
     print_cluster_info2(clusters, centroids, feature_names, combined_genes_normalized)
+    print("-" * 75)
+centers, U, labels = fuzzy_c_means(combined_genes_normalized[['sch9/wt', 'ras2/wt', 'tor1/wt']].values, n_clusters=3)
+print(U)
+
+for k in range(3, 11, 2):
+    print(f"Running Fuzzy C-Means Clustering with k={k}")
+    X = combined_genes_normalized[['sch9/wt', 'ras2/wt', 'tor1/wt']].values
+    centers, U, labels = fuzzy_c_means(X, n_clusters=k)
+    feature_names = ['sch9/wt', 'ras2/wt', 'tor1/wt']
+    # Print cluster info
+    print_cluster_info2(labels, centers, feature_names, combined_genes_normalized)
+    # Print the fuzzy membership matrix
+    print("\n===== Fuzzy Membership Matrix =====")
+    membership_df = pd.DataFrame(U.T, columns=[f"Cluster {i + 1}" for i in range(k)])
+    membership_df['Public ID'] = combined_genes_normalized['Public ID'].values
+    membership_df['Gene'] = combined_genes_normalized['Gene'].values
+    membership_df['IsLongevity'] = combined_genes_normalized['IsLongevity'].values
+    print(membership_df.to_string(index=False, float_format="%.4f"))
     print("-" * 75)
